@@ -92,7 +92,9 @@ param(
 
     [string]$SecondaryVlanId,
 
-    [switch]$InstallDocker
+    [switch]$InstallDocker,
+
+    [string]$TailscaleAuthKey
 )
 
 $ErrorActionPreference = 'Stop'
@@ -244,6 +246,15 @@ if ($InstallDocker) {
  - 'apt update -y'
  - 'apt install -y docker-ce docker-ce-cli containerd.io docker-compose'
 '@
+}
+
+if ($TailscaleAuthKey) {
+    $sectionRunCmd += @"
+
+ - 'curl -fsSL https://tailscale.com/install.sh | sh'
+ - echo 'net.ipv4.ip_forward = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf && echo 'net.ipv6.conf.all.forwarding = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf && sudo sysctl -p /etc/sysctl.d/99-tailscale.conf
+ - 'sudo tailscale up --auth-key=$TailscaleAuthKey --hostname=$VMName --accept-routes --accept-dns --ssh'
+"@
 }
 
 $userdata = @"
